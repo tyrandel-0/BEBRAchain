@@ -2,8 +2,10 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import { SocksProxyAgent } from "socks-proxy-agent";
 import * as fs from 'fs';
 import { config, proxyType } from "./types.js";
+import { FetchRequest, ethers, JsonRpcProvider } from "ethers";
+import { Agent } from "agent-base"
 
-export function getProxyAgent(proxyString: string, type: proxyType): any {
+export function getProxyAgent(proxyString: string, type: proxyType): Agent | undefined {
     if (proxyString == undefined){
         return undefined;
     }
@@ -49,4 +51,15 @@ export function readConfig(configPath: string): config {
 
 export function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function getJsonRpcProvider(url: string, proxyAgent: Agent | undefined): JsonRpcProvider{
+    if (proxyAgent){
+        const fetchReq = new FetchRequest(url);
+        fetchReq.getUrlFunc = FetchRequest.createGetUrlFunc({ agent: proxyAgent });
+        return new ethers.JsonRpcProvider(fetchReq);
+    }
+    else {
+        return new ethers.JsonRpcProvider(url);
+    }
 }

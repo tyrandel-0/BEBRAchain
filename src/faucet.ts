@@ -1,8 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import { getProxyAgent, sleep } from './utils.js';
 import { proxyType } from './types.js';
+import { Agent } from "agent-base"
 
-async function sendForDecision(apiKey: string, proxyAgent: any): Promise<string> {
+async function sendForDecision(apiKey: string, proxyAgent: Agent | undefined): Promise<string> {
 	const url = `https://2captcha.com/in.php?key=${apiKey}&method=userrecaptcha&version=v3&min_score=0.9&action=submit&googlekey=6LfOA04pAAAAAL9ttkwIz40hC63_7IsaU2MgcwVH&pageurl=https://artio.faucet.berachain.com/`;
 	try {
 		const response = await axios.get(url, { httpsAgent: proxyAgent });
@@ -12,7 +13,7 @@ async function sendForDecision(apiKey: string, proxyAgent: any): Promise<string>
 	}
 }
 
-async function getSolution(apiKey: string, captchaId: string, proxyAgent: any): Promise<string> {
+async function getSolution(apiKey: string, captchaId: string, proxyAgent: Agent | undefined): Promise<string> {
 	const url = `https://2captcha.com/res.php?key=${apiKey}&action=get&id=${captchaId}`
 	try {
 		const response = await axios.get(url, { httpsAgent: proxyAgent });
@@ -22,7 +23,7 @@ async function getSolution(apiKey: string, captchaId: string, proxyAgent: any): 
 	}
 }
 
-async function solveCaptcha(apiKey: string, proxyAgent: any): Promise<string> {
+async function solveCaptcha(apiKey: string, proxyAgent: Agent | undefined): Promise<string> {
 	try {
 		const id = (await sendForDecision(apiKey, proxyAgent)).slice(3);
 		await sleep(40000);

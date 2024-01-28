@@ -1,6 +1,7 @@
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { SocksProxyAgent } from "socks-proxy-agent";
 import * as fs from 'fs';
+import { FetchRequest, ethers } from "ethers";
 export function getProxyAgent(proxyString, type) {
     if (proxyString == undefined) {
         return undefined;
@@ -41,4 +42,14 @@ export function readConfig(configPath) {
 }
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+export function getJsonRpcProvider(url, proxyAgent) {
+    if (proxyAgent) {
+        const fetchReq = new FetchRequest(url);
+        fetchReq.getUrlFunc = FetchRequest.createGetUrlFunc({ agent: proxyAgent });
+        return new ethers.JsonRpcProvider(fetchReq);
+    }
+    else {
+        return new ethers.JsonRpcProvider(url);
+    }
 }

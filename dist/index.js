@@ -24,7 +24,7 @@ async function main() {
         case "Подоить кран":
             await faucet(wallets, config._2captchaApiKey, proxies, config.ProxyType);
         case "Чекнуть балансы":
-            await checkBalances('https://artio.rpc.berachain.com/', wallets);
+            await checkBalances('https://artio.rpc.berachain.com/', wallets, proxies, config.ProxyType);
     }
 }
 main();
