@@ -7,7 +7,6 @@ export async function checkBalances(providerUrl: string, wallets: string[], prox
 
     for (let i = 0; i < wallets.length; i++) {
         const proxyAgent = (proxies && proxyType) ? getProxyAgent(proxies[i], proxyType) : undefined
-        console.log(proxyAgent)
         const provider = getJsonRpcProvider(providerUrl, proxyAgent)
         const balance = await provider.getBalance(ethers.getAddress(wallets[i]));
         const balanceBERA = ethers.formatEther(balance);
