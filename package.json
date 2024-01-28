@@ -1,0 +1,29 @@
+{
+  "name": "bebrachain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "tsc && node dist/index.js",
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "bluebird": "^3.7.2",
+    "ethers": "^6.10.0",
+    "http-proxy-agent": "^7.0.0",
+    "https-proxy-agent": "^7.0.2",
+    "inquirer": "^9.2.13",
+    "socks": "^2.7.1",
+    "socks-proxy-agent": "^8.0.2",
+    "socks5-http-client": "^1.0.4",
+    "socks5-https-client": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.42",
+    "@types/inquirer": "^9.0.7"
+  }
+}
