@@ -32,7 +32,7 @@ async function walletFaucet(walletIndex: number, address: string, apiKey: string
 		endedWallets++
 		return
 	}
-	const url = `https://artio-80085-faucet-api-recaptcha.berachain.com/api/claim?address${address}`;
+	const url = `https://artio-80085-faucet-api-recaptcha.berachain.com/api/claim?address=${address}`;
 
 	updateStatus(walletIndex, "faucet...")
 	try {
