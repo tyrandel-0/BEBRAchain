@@ -1,5 +1,75 @@
 import axios from 'axios';
-import { getProxyAgent, sleep } from './utils.js';
+import { getProxyAgent, getRandomDelayTime, sleep } from './utils.js';
+export async function faucet(wallets, _2captchaApiKey, proxies, proxyType, delayTimeRange) {
+    for (let i = 0; i < wallets.length; i++) {
+        data.push({ wallet: wallets[i], status: "in progress" });
+        walletFaucet(i, wallets[i], _2captchaApiKey, proxies[i], proxyType, getRandomDelayTime(delayTimeRange));
+    }
+    setInterval(updateData, 100);
+}
+async function walletFaucet(walletIndex, address, apiKey, proxy, proxyType, delay) {
+    const proxyAgent = getProxyAgent(proxy, proxyType);
+    updateStatus(walletIndex, `waiting for ${delay} seconds before start`);
+    await sleep(delay * 1000);
+    updateStatus(walletIndex, "solving Captcha...");
+    let captchaSolution;
+    try {
+        captchaSolution = await solveCaptcha(apiKey, proxyAgent);
+        if (captchaSolution == undefined) {
+            updateStatus(walletIndex, "solving Captcha error");
+            endedWallets++;
+            return;
+        }
+    }
+    catch (error) {
+        updateStatus(walletIndex, "solving Captcha error");
+        endedWallets++;
+        return;
+    }
+    const url = `https://artio-80085-faucet-api-recaptcha.berachain.com/api/claim?address${address}`;
+    updateStatus(walletIndex, "faucet...");
+    try {
+        const response = await axios.post(url, {
+            address: address,
+        }, {
+            httpsAgent: proxyAgent,
+            headers: {
+                'Authorization': `Bearer ${captchaSolution}`
+            },
+        });
+        updateStatus(walletIndex, "faucet success! Status code: " + response.status);
+    }
+    catch (error) {
+        if (axios.isAxiosError(error)) {
+            const axiosError = error;
+            if (axiosError.response) {
+                updateStatus(walletIndex, "faucet failed: status code: " + axiosError.response.status);
+                errors.set(axiosError.response.status, axiosError.response.statusText.toString());
+            }
+            else if (axiosError.request) {
+                updateStatus(walletIndex, "faucet failed: " + axiosError.request);
+            }
+            else {
+                updateStatus(walletIndex, "faucet failed: " + axiosError.message);
+            }
+        }
+        else {
+            updateStatus(walletIndex, "faucet error: " + error);
+        }
+    }
+    endedWallets++;
+}
+async function solveCaptcha(apiKey, proxyAgent) {
+    try {
+        const id = (await sendForDecision(apiKey, proxyAgent)).slice(3);
+        await sleep(40000);
+        const solution = (await getSolution(apiKey, id, proxyAgent)).slice(3);
+        return solution;
+    }
+    catch (error) {
+        throw error;
+    }
+}
 async function sendForDecision(apiKey, proxyAgent) {
     const url = `https://2captcha.com/in.php?key=${apiKey}&method=userrecaptcha&version=v3&min_score=0.9&action=submit&googlekey=6LfOA04pAAAAAL9ttkwIz40hC63_7IsaU2MgcwVH&pageurl=https://artio.faucet.berachain.com/`;
     try {
@@ -20,75 +90,6 @@ async function getSolution(apiKey, captchaId, proxyAgent) {
         throw error;
     }
 }
-async function solveCaptcha(apiKey, proxyAgent) {
-    try {
-        const id = (await sendForDecision(apiKey, proxyAgent)).slice(3);
-        await sleep(40000);
-        const solution = (await getSolution(apiKey, id, proxyAgent)).slice(3);
-        return solution;
-    }
-    catch (error) {
-        throw error;
-    }
-}
-async function walletFaucet(walletIndex, address, apiKey, proxy, proxyType) {
-    const proxyAgent = getProxyAgent(proxy, proxyType);
-    updateStatus(walletIndex, "solving Captcha...");
-    let captchaSolution;
-    try {
-        captchaSolution = await solveCaptcha(apiKey, proxyAgent);
-        if (captchaSolution == undefined) {
-            updateStatus(walletIndex, "solving Captcha error");
-            endedWallets++;
-            return;
-        }
-    }
-    catch (error) {
-        updateStatus(walletIndex, "solving Captcha error");
-        endedWallets++;
-        return;
-    }
-    const url = `https://artio-80085-ts-faucet-api-2.berachain.com/api/claim?address=${address}`;
-    updateStatus(walletIndex, "faucet...");
-    try {
-        const response = await axios.post(url, {
-            address: address,
-        }, {
-            httpsAgent: proxyAgent,
-            headers: {
-                'Authorization': `Bearer ${captchaSolution}`
-            },
-        });
-        updateStatus(walletIndex, "faucet success! Status code: " + response.status);
-        // return {
-        // 	responseBody: response.data,
-        // 	statusCode: response.status,
-        // 	statusText: response.statusText
-        // }
-    }
-    catch (error) {
-        if (axios.isAxiosError(error)) {
-            const axiosError = error;
-            if (axiosError.response) {
-                updateStatus(walletIndex, "faucet failed: status code: " + axiosError.response.status);
-                errors.set(axiosError.response.status, axiosError.response.statusText.toString());
-                // if (axiosError.response.status == 401){
-                // 	errors.set(walletIndex, captchaSolution);
-                // }
-            }
-            else if (axiosError.request) {
-                updateStatus(walletIndex, "faucet failed: " + axiosError.request);
-            }
-            else {
-                updateStatus(walletIndex, "faucet failed: " + axiosError.message);
-            }
-        }
-        else {
-            updateStatus(walletIndex, "faucet error: " + error);
-        }
-    }
-    endedWallets++;
-}
 async function walletFaucetTest(walletIndex, address, apiKey, proxy, proxyType) {
     const proxyAgent = getProxyAgent(proxy, proxyType);
     const url = "https://api.ipify.org/";
@@ -104,9 +105,6 @@ async function walletFaucetTest(walletIndex, address, apiKey, proxy, proxyType) 
             if (axiosError.response) {
                 updateStatus(walletIndex, "faucet failed: status code: " + axiosError.response.status);
                 errors.set(axiosError.response.status, axiosError.response.statusText.toString());
-                // if (axiosError.response.status == 401){
-                // 	errors.set(walletIndex, captchaSolution);
-                // }
             }
             else if (axiosError.request) {
                 updateStatus(walletIndex, "faucet failed: " + axiosError.request);
@@ -119,17 +117,6 @@ async function walletFaucetTest(walletIndex, address, apiKey, proxy, proxyType) 
             updateStatus(walletIndex, "faucet error: " + error);
         }
     }
-}
-export async function faucet(wallets, _2captchaApiKey, proxies, proxyType) {
-    for (let i = 0; i < wallets.length; i++) {
-        data.push({ wallet: wallets[i], status: "in progress" });
-        walletFaucet(i, wallets[i], _2captchaApiKey, proxies[i], proxyType);
-    }
-    // for (let i = 0; i < wallets.length; i++) {
-    // 	data.push({ wallet: wallets[i], status: "in progress" });
-    // 	await walletFaucet(i, wallets[i], _2captchaApiKey, proxies[i], proxyType);
-    // }
-    setInterval(updateData, 100);
 }
 let data = [];
 let endedWallets = 0;

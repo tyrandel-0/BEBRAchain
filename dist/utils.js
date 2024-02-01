@@ -2,6 +2,7 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import { SocksProxyAgent } from "socks-proxy-agent";
 import * as fs from 'fs';
 import { FetchRequest, ethers } from "ethers";
+import { erc20Abi } from "./abi/bexSwap.js";
 export function getProxyAgent(proxyString, type) {
     if (proxyString == undefined) {
         return undefined;
@@ -47,9 +48,37 @@ export function getJsonRpcProvider(url, proxyAgent) {
     if (proxyAgent) {
         const fetchReq = new FetchRequest(url);
         fetchReq.getUrlFunc = FetchRequest.createGetUrlFunc({ agent: proxyAgent });
-        return new ethers.JsonRpcProvider(fetchReq);
+        const provider = new ethers.JsonRpcProvider(fetchReq);
+        return provider;
     }
     else {
         return new ethers.JsonRpcProvider(url);
     }
+}
+export function getRandomInRange(min, max) {
+    let random = Math.random() * (max - min) + min;
+    return random.toFixed(8);
+}
+export function getRandomDelayTime(range) {
+    const { timeSecMin, timeSecMax } = range;
+    const randomDelay = Math.floor(Math.random() * (timeSecMax - timeSecMin + 1)) + timeSecMin;
+    return randomDelay;
+}
+export function convertToFloat(balance, decimal) {
+    if (balance == "Error")
+        return balance;
+    return parseFloat((parseInt(balance) / 10 ** decimal).toFixed(6));
+}
+export async function approveERC20(wallet, tokenAddress, amount, to) {
+    const contract = new ethers.Contract(tokenAddress, erc20Abi, wallet);
+    const data = await contract.interface.encodeFunctionData("approve", [to, amount]);
+    let tx = {
+        to: tokenAddress,
+        data: data,
+    };
+    tx = await wallet.populateTransaction(tx);
+    tx.maxFeePerGas = ethers.toNumber(tx.maxFeePerGas) * 10;
+    tx.maxPriorityFeePerGas = ethers.toNumber(tx.maxPriorityFeePerGas) * 10;
+    const txResponse = await wallet.sendTransaction(tx);
+    return txResponse.hash;
 }

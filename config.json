@@ -1,4 +1,9 @@
 {
     "_2captchaApiKey" : "",
-    "ProxyType" : "socks"
+    "ProxyType" : "socks",
+    "Rpc": "https://artio.rpc.berachain.com/",
+    "DelayTimeRange": {
+        "timeSecMin": 20,
+        "timeSecMax": 100
+    }
 }
